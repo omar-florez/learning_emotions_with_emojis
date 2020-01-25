@@ -150,47 +150,20 @@ def compute_experiments(model, data_iter):
 
 #------------------------------------------------------------------------------------------------
 # Run
-
-# all_text = dataset_raw.read().decode('utf-8').lower()
-# all_text = all_text[start:]
-# all_text = all_text.replace('\r\n', ' ').replace('\n', ' ').replace('-', '- ')
-#
-# print('First 500 characters: ')
-# print(all_text[:500])
-#
-# L = len(all_text)
-# train = all_text[:int(L*0.92)]
-# test = all_text[int(L*0.92):int(L*0.96)]
-# val = all_text[int(L*0.96):]
-#
-# with open('train.txt', 'w') as f:
-#   f.write(train)
-# with open('test.txt', 'w') as f:
-#   f.write(test)
-# with open('val.txt', 'w') as f:
-#   f.write(val)
-
-#-----------
 from torchtext import data, datasets
 import spacy
 from data.EmojiDatasetWords import EmojiDatasetWords
 
 spacy_es = spacy.load('es')
-
-def tokenize_es(text):
-  return [tok.text for tok in spacy_es.tokenizer(text)]
-
+dataset = EmojiDatasetWords()
 BLANK_WORD = '<blank>'
 MIN_FREQ = 2
 
-dataset = EmojiDatasetWords()
-#dataset.write_datasets_tsv()
+def tokenize_es(text):
+    return [tok.text for tok in spacy_es.tokenizer(text)]
 
 SRC = data.Field(tokenize=tokenize_es, pad_token=BLANK_WORD)
 TGT = data.Field(sequential=False, unk_token=None)
-
-#self.TEXT.build_vocab(self.train, self.dev, self.test, vectors=GloVe(name='840B', dim=300))
-#self.LABEL.build_vocab(self.train)
 
 train, val, test = data.TabularDataset.splits(path='data',
                                               train='train.tsv',
@@ -204,9 +177,6 @@ train, val, test = data.TabularDataset.splits(path='data',
 SRC.build_vocab(train, val, test, min_freq=MIN_FREQ)
 TGT.build_vocab(train)
 
-#self.TEXT.build_vocab(self.train, self.dev, self.test, vectors=GloVe(name='840B', dim=300))
-#self.LABEL.build_vocab(train)
-
 train_iter, val_iter, test_iter = data.BucketIterator.splits((train, val, test),
                                                              batch_size=32,
                                                              repeat=False,
@@ -214,22 +184,6 @@ train_iter, val_iter, test_iter = data.BucketIterator.splits((train, val, test),
                                                              sort=False)
                                                              #device=args.gpu,
                                                              #sort_key=sort_key)
-
-# Dataset constants
-# SRC = data.Field(tokenize=tokenize_es, pad_token=BLANK_WORD)
-#
-# train = datasets.LanguageModelingDataset('train.txt', SRC)
-# test = datasets.LanguageModelingDataset('test.txt', SRC)
-# val = datasets.LanguageModelingDataset('val.txt', SRC)
-#SRC.build_vocab(train, min_freq=MIN_FREQ)
-# Define a dataset iterator for language models that implement Back Propagation
-# Through Time (BPTT)
-# train_iter, val_iter, test_iter = data.BPTTIterator.splits((train, val, test),
-#                                                            batch_size=256,
-#                                                            bptt_len=seq_len,
-#                                                            #device='cuda:0',
-#                                                            repeat=False,
-#                                                            shuffle=True)
 
 print('20 elements of the train vocabulary:')
 print(SRC.vocab.itos[:20])
@@ -240,17 +194,6 @@ num_classes = 3
 tgt_vocab = len(SRC.vocab)
 model = GPT2_make_model(tgt_vocab=tgt_vocab, N=4, d_model=512, d_ff=2048, h=8, dropout=0.2)
 
-model#.cuda()
-
-# -------------------------------------------------------------------------------
-# Generate text with no training
-# model.eval()
-# start_symbol = np.random.randint(len(SRC.vocab))
-# out = sample_decoding(model, max_len=seq_len,
-#                       start_symbol=start_symbol, seq_len=seq_len)
-# txt = vocab_lookup(SRC.vocab, out[0])
-# print('Result without training: ', txt)
-# -------------------------------------------------------------------------------
 # Train model
 import warnings
 warnings.filterwarnings(action='once')
