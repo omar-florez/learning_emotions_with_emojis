@@ -44,11 +44,12 @@ class GeneratorForClassification(nn.Module):
     def __init__(self, d_model, vocab):
         super().__init__()
         self.vocab = vocab
-        self.proj = nn.Linear(d_model, vocab)
+        #self.proj = nn.Linear(d_model, vocab)
 
     def forward(self, x):
         x = x.view(x.shape[0], -1)
-        proj = nn.Linear(x.shape[1], self.vocab)
+        proj = nn.Linear(x.shape[1], self.vocab).to(x.device)
+        # lof_softmax(): log(exp(x_i)/exp(x).sum()) == x_i - log( exp(x).sum())
         return F.log_softmax(proj(x), dim=-1)
 
 class SimpleLossCompute:
@@ -64,12 +65,12 @@ class SimpleLossCompute:
         # y: torch.Size([32, 9])
         #loss = self.criterion(x.contiguous().view(-1, x.size(-1)), y.contiguous().view(-1).type(torch.float))
         loss = self.criterion(x.contiguous().view(-1, x.size(-1)), y.contiguous().type(torch.float))
-        loss /= norm
+        #loss /= norm
         loss.backward()
         if self.opt is not None:
             self.opt.step()
             self.opt.optimizer.zero_grad()
-        return loss.item() * norm
+        return loss.item() #* norm
 
 def subsequent_mask(size):
     "Mask out subsequent positions."

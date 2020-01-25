@@ -193,6 +193,7 @@ seq_len = 32
 num_classes = 3
 tgt_vocab = len(SRC.vocab)
 model = GPT2_make_model(tgt_vocab=tgt_vocab, N=4, d_model=512, d_ff=2048, h=8, dropout=0.2)
+#model.to('cuda:0')
 
 # Train model
 import warnings
@@ -201,14 +202,19 @@ warnings.filterwarnings(action='once')
 pad_idx = SRC.vocab.stoi['<blank>']
 
 #criterion = LabelSmoothing(size=len(SRC.vocab), padding_idx=pad_idx, smoothing=1e-6)#.cuda()
-criterion = nn.KLDivLoss(reduction='sum')
+#   T = args.temperature if args and hasattr(args, 'temperature') else 4
+#   kd_loss = nn.KLDivLoss()(F.log_softmax(s / T, dim=1), F.softmax(t / T, dim=1)) * (T * T)
+criterion = nn.KLDivLoss(size_average=False)
 
 model_opt = VaryingRateOpt(model_size=model.tgt_embed[0].d_model,
-                           factor=1, warmup=1000,
+                           factor=1, warmup=1.0,
                            optimizer=torch.optim.Adam(model.parameters(),
                                                       lr=0.0,
                                                       betas=(0.9, 0.98),
                                                       eps=1e-9))
+
+
+
 for epoch in range(20):
   model.train()
   GP2_run_epoch((rebatch_classification(pad_idx, b, num_classes) for b in train_iter),
@@ -228,3 +234,9 @@ for epoch in range(20):
   print('Epoch [{}] Validation loss: {} Precision: {}'.format(epoch, loss.item(), val_precision))
 
 torch.save(model.state_dict(), 'model.state')
+
+
+# !cat requirements.txt | xargs -n 1 pip install
+# !pip install torchtext spacy
+# !python -m spacy download en
+# !python -m spacy download es
