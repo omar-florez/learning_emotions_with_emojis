@@ -85,7 +85,7 @@ class EmojiDatasetWords():
         return
 
     def load_datasets(self):
-        saved_objects = np.load('./saved/params/model_params.npy').item()
+        saved_objects = np.load('./saved/params/model_params.npy', allow_pickle=True).item()
         self.max_seq_len = saved_objects['max_seq_len']
         self.observations = saved_objects['observations']
         self.emojis = saved_objects['emojis']
@@ -113,6 +113,21 @@ class EmojiDatasetWords():
 
         self.vocab_size = saved_objects['vocab_size']
         return
+
+    def write_datasets_tsv(self):
+        saved_objects = np.load('./saved/params/model_params.npy', allow_pickle=True).item()
+        self.emojis = saved_objects['emojis']
+        self.word2idx = saved_objects['word2idx']
+        self.idx2word = saved_objects['idx2word']
+
+        train_df = self.decode_dataset(saved_objects['x_train'], saved_objects['y_train'], None, file_path=None)
+        test_df = self.decode_dataset(saved_objects['x_test'], saved_objects['y_test'], None, file_path=None)
+        val_df = self.decode_dataset(saved_objects['x_val'], saved_objects['y_val'], None, file_path=None)
+
+        train_df.to_csv('./data/train.tsv', sep='\t', index=False)
+        test_df.to_csv('./data/test.tsv', sep='\t', index=False)
+        val_df.to_csv('./data/val.tsv', sep='\t', index=False)
+
 
     def build_dataset(self, file_name, remove_lowfrequent_words=True, max_seq_len=10):
         self.max_seq_len = max_seq_len
